@@ -1,0 +1,11 @@
+T
+SAB
+ab
+S->ABA
+S->BAa
+A->e
+A->B
+A->S
+B->b
+B->BA
+C->ASB
