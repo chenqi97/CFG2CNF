@@ -12,6 +12,8 @@ void init(CFANodePtr cfaNodePtr, char *variables, char *terminals, char start_v)
     cfaNodePtr->rule = (RuleLeftNodePtr)malloc(sizeof(RuleLeftNode));
     tempRule = cfaNodePtr->rule;
     tempRule->variable = start_v;
+    tempRule->deletedPos = 0;
+    tempRule->flag = 0;
     tempRule->first_rule_r = (RuleRightNodePtr)malloc(sizeof(RuleRightNode));
     tempRule->first_rule_r->rule_r = (char*)malloc(sizeof(char)*2);
     tempRule->first_rule_r->rule_r[0] = variables[0];
@@ -25,7 +27,7 @@ void init(CFANodePtr cfaNodePtr, char *variables, char *terminals, char start_v)
         tempRule->next_rule_l = (RuleLeftNodePtr)malloc(sizeof(RuleLeftNode));
         tempRule->next_rule_l->variable = variables[i];
         tempRule->tempVar = ' ';
-        tempRule->varFlag = 0;
+        tempRule->deletedPos = 0;
         tempRule->flag = 0;
         tempRule->next_rule_l->first_rule_r = NULL;
         tempRule->next_rule_l->next_rule_l = NULL;
@@ -154,17 +156,12 @@ RuleLeftNodePtr findSinVar(RuleLeftNodePtr rule)
         tempPreRule = NULL;
         while(tempRightRule != NULL)
         {
-            // printf("%s ",tempRightRule->rule_r);
             if(strlen(tempRightRule->rule_r) == 1 && tempRightRule->rule_r[0] >= 65 
             && tempRightRule->rule_r[0] <= 90)
             {
-                if(tempRule->tempVar != tempRightRule->rule_r[0])
-                {
-                    tempRule->tempVar = tempRightRule->rule_r[0];
-                    tempRule->varFlag = 0;
-                }
-                else
-                    tempRule->varFlag = 1;
+                tempRule->tempVar = tempRightRule->rule_r[0];
+                if(tempRule->deletedPos < 50)
+                    tempRule->deletedVar[tempRule->deletedPos++] = tempRule->tempVar;
                 if(!tempPreRule)
                 {
                     tempRule->first_rule_r = tempRightRule->next_rule_r;
@@ -255,8 +252,8 @@ void removeSinVar(RuleLeftNodePtr rule)
         return;
     else
     {
-        if(!tempLeft->varFlag)
-            removeOneSinVar(rule,tempLeft,tempLeft->tempVar);
+        // printCNF(rule);
+        removeOneSinVar(rule,tempLeft,tempLeft->tempVar);
         removeSinVar(rule);
     }
 }
@@ -284,13 +281,20 @@ void removeOneSinVar(RuleLeftNodePtr rule, RuleLeftNodePtr leftRule, char variab
     }
     while(tempRightRule)
     {
-        if(addOneRule(tempRR, tempRightRule->rule_r))
-            tempRR = tempRR->next_rule_r;
+        if(strlen(tempRightRule->rule_r) == 1)
+        {
+            int i;
+            for(i = 0; i < leftRule->deletedPos; i++)
+            {
+                if(tempRightRule->rule_r[0] == leftRule->deletedVar[i])
+                    break;
+            }
+            if(i == leftRule->deletedPos)
+                addOneRule(tempRR, tempRightRule->rule_r);
+        }else
+            addOneRule(tempRR, tempRightRule->rule_r);
         tempRightRule = tempRightRule->next_rule_r;
     }
-    // free(tempRule);
-    // free(tempRightRule);
-    // free(tempRR);
 }
 
 void removeTerminals(CFANodePtr cfa)
@@ -393,7 +397,7 @@ void addOneVar(RuleLeftNodePtr leftRule, char newVar, char *newRule)
     
     newLeftNode->variable = newVar;
     newLeftNode->tempVar = '$';
-    newLeftNode->varFlag = 0;
+    newLeftNode->deletedPos = 0;
     newLeftNode->flag = 0;
     newLeftNode->next_rule_l = NULL;
     newLeftNode->first_rule_r = newRightNode;

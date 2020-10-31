@@ -15,7 +15,8 @@ typedef struct RuleLeft
 {
     char variable;
     char tempVar;
-    int varFlag;
+    char deletedVar[MAX_LEN];
+    int deletedPos;
     int flag;//falg = 1 e has been deleted
     struct RuleLeft *next_rule_l;
     struct RuleRight *first_rule_r;
